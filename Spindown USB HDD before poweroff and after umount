@@ -1,0 +1,33 @@
+1: Create script /usr/local/sbin/spindown.sh
+#!/bin/bash
+# # Expect /dev/sdX to be unmounted
+while grep -qs '/dev/sdX' /proc/mounts; do
+    sleep 0.1
+done
+
+# Spindown disk /dev/sdX
+hdparm -Y /dev/sdX
+exit 0
+
+2: Make it executale
+chmod +x /usr/local/sbin/spindown.sh
+
+3: Create new service /etc/systemd/system/spindown.service
+[Unit]
+Description=Spindown HDD before poweroff after umount
+DefaultDependencies=no
+Before=shutdown.target
+After=umount.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/spindown.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=halt.target poweroff.target
+
+4: Enable service
+sudo systemctl daemon-reload
+sudo systemctl enable spindown.service
+
